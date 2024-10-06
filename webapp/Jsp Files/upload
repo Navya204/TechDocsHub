@@ -1,0 +1,74 @@
+<%@ page import="java.io.File" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.*" %>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Files for ${param.technology}</title>
+     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/uploadStyle.css">
+    <script>
+        function showUploadForm(subtopic) {
+            document.getElementById('uploadForm').style.display = 'block';
+            document.getElementById('selectedSubtopic').value = subtopic;
+            document.getElementById('subtopicDisplay').innerText = subtopic;
+        }
+
+        function openFileView(subtopic) {
+            window.location.href = "viewFiles.jsp?subtopic=" + subtopic;
+        }
+
+        function closeUploadForm() {
+            document.getElementById('uploadForm').style.display = 'none';
+        }
+    </script>
+</head>
+<body>
+
+<h2>Upload Files for ${param.technology}</h2>
+
+<div class="subtopic-container">
+    <%
+        String technology = request.getParameter("technology");
+        ArrayList<String> subtopics = new ArrayList<>();
+
+        if ("Java".equalsIgnoreCase(technology)) {
+            subtopics.add("Core Java");
+            subtopics.add("OOP");
+            subtopics.add("Multithreading");
+            subtopics.add("Exception Handling");
+        } else if ("C".equalsIgnoreCase(technology)) {
+            subtopics.add("Arrays");
+            subtopics.add("Structures");
+        } else if ("python".equalsIgnoreCase(technology)) {
+            subtopics.add("Numpy");
+            subtopics.add("Pandas");    
+        } else if ("C++".equals(technology)) {
+            subtopics.add("Standard Library");
+        }
+
+        for (String subtopic : subtopics) {
+    %>
+        <div class="subtopic-block" onclick="openFileView('<%= subtopic %>')">
+            <div class="icon">&#128193;</div> <!-- Unicode for file folder -->
+            <div><%= subtopic %></div>
+            <div class="plus-icon" onclick="showUploadForm('<%= subtopic %>'); event.stopPropagation();">+</div>
+        </div>
+    <%
+        }
+    %>
+</div>
+
+<!-- Form to Upload a New File -->
+<div class="upload-form" id="uploadForm" style="display:none;">
+    <h3>Add a New File for <span id="subtopicDisplay"></span></h3>
+    <form action="FileUploadServlet" method="post" enctype="multipart/form-data">
+        <input type="hidden" id="selectedSubtopic" name="subtopic">
+        <label for="file">Select file to upload:</label><br><br>
+        <input type="file" name="file" id="file" required><br><br>
+        <label for="description">File Description:</label><br><br>
+        <textarea name="description" id="description" required></textarea><br><br>
+        <input type="submit" value="Upload">
+        <button type="button" onclick="closeUploadForm()">Cancel</button>
+    </form>
+</div>
