@@ -1,0 +1,42 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ page import="java.io.File" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Files for ${param.subtopic}</title>
+    <style>
+        .file-list a {
+            display: block;
+            color: blue;
+            text-decoration: none;
+        }
+        .back-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Files for Subtopic: ${param.subtopic}</h2>
+
+<div class="file-list">
+    <%
+        String subtopicFolderPath = application.getRealPath("/") + "uploadFiles/" + request.getParameter("subtopic");
+        File subtopicFolder = new File(subtopicFolderPath);
+        if (subtopicFolder.exists() && subtopicFolder.isDirectory()) {
+            File[] files = subtopicFolder.listFiles();
+            if (files != null && files.length > 0) {
+                for (File file : files) {
+                    out.println("<a href='uploadFiles/" + request.getParameter("subtopic") + "/" + file.getName() + "'>" + file.getName() + "</a><br>");
+                }
+            } else {
+                out.println("No files uploaded yet.");
+            }
+        } else {
+            out.println("No files uploaded yet.");
+        }
+    %>
+</div>
