@@ -1,0 +1,90 @@
+package com.fileuploads.controller;
+
+import java.io.File;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import java.sql.*;
+@WebServlet("/FileUploadServlet")
+@MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2,  // 2MB threshold after which files are written to disk
+                 maxFileSize = 1024 * 1024 * 10,       // Maximum file size 10MB
+                 maxRequestSize = 1024 * 1024 * 50)    // Maximum request size 50MB
+public class FileUploadServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    // Folder to save uploaded files (inside webapp/uploads)
+    private static final String SAVE_DIR = "uploads";
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String subtopic = request.getParameter("subtopic");
+        String description = request.getParameter("description");
+
+        // Get the absolute path to the uploads folder inside the webapp directory
+        String savePath = getServletContext().getRealPath("") + File.separator + SAVE_DIR;
+
+        // Create uploads directory if it does not exist
+        File fileSaveDir = new File(savePath);
+        if (!fileSaveDir.exists()) {
+            fileSaveDir.mkdirs(); // Create directories if they don't exist
+        }
+
+        try {
+            // Iterate over the uploaded parts (files)
+            for (Part part : request.getParts()) {
+                String fileName = extractFileName(part);
+                if (fileName != null && !fileName.isEmpty()) {
+                    // Save the file to the uploads directory
+                    part.write(savePath + File.separator + fileName);
+
+                    // Save file info in the database (optional)
+                    saveFileDetailsInDatabase(fileName, subtopic, description);
+                }
+            }
+
+            // Set a success message and forward to the JSP page
+            request.setAttribute("message", "File uploaded successfully!");
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("upload.jsp?message=File upload failed!");
+        }
+    }
+
+    // Extract file name from the content-disposition header
+    private String extractFileName(Part part) {
+        String contentDisposition = part.getHeader("content-disposition");
+        String[] items = contentDisposition.split(";");
+        for (String s : items) {
+            if (s.trim().startsWith("filename")) {
+                return s.substring(s.indexOf("=") + 2, s.length() - 1).replace("\"", "");
+            }
+        }
+        return null;
+    }
+
+    // Save file details in the database (optional)
+    private void saveFileDetailsInDatabase(String fileName, String subtopic, String description) {
+        String url = "jdbc:mysql://localhost:3306/Project";  // Database URL
+        String user = "root";  // Database username
+        String password = "root";  // Database password
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            String query = "INSERT INTO Project.file (filename, subtopic, description) VALUES (?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(query)) {
+                ps.setString(1, fileName);
+                ps.setString(2, subtopic);
+                ps.setString(3, description);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
